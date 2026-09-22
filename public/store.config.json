@@ -1,0 +1,218 @@
+{
+  "storeName": "Fashion Style",
+  "storeTagline": "Alta Peluquería & Barbería Signature",
+  "logoText": "FASHION STYLE",
+  "currencySymbol": "$",
+  "currencyCode": "MXN",
+  "contact": {
+    "whatsapp": "521234567890",
+    "phone": "+52 55 1234 5678",
+    "email": "contacto@fashionstyle.com",
+    "address": "Av. Principal 123, Polanco, CDMX",
+    "instagram": "@fashionstyle.official"
+  },
+  "schedule": {
+    "slotIntervalMinutes": 30,
+    "startHour": 9,
+    "endHour": 20,
+    "daysAheadAvailable": 14,
+    "workingDays": [1, 2, 3, 4, 5, 6]
+  },
+  "employees": [
+    { "id": "emp-1", "name": "Cualquier especialista disponible", "role": "Asignación inteligente" },
+    { "id": "emp-2", "name": "Carlos Mendoza", "role": "Master Barber" },
+    { "id": "emp-3", "name": "Elena Rostova", "role": "Senior Colorist & Stylist" },
+    { "id": "emp-4", "name": "David Silva", "role": "Hair Care & Spa Specialist" }
+  ],
+  "categories": [
+    "Todos",
+    "Corte y Estilo",
+    "Barbería Tradicional",
+    "Colorimetría",
+    "Tratamientos Capilares",
+    "Manicura & Pedicura",
+    "Cuidado Capilar",
+    "Masterclasses & Packs"
+  ],
+  "items": [
+    {
+      "id": "fs-srv-corte-autor",
+      "name": "Corte de Autor & Visagismo",
+      "category": "Corte y Estilo",
+      "type": "service",
+      "price": 650,
+      "durationMinutes": 45,
+      "image": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&auto=format&fit=crop&q=60",
+      "description": "Asesoría de imagen personalizada, lavado sensorial, técnica de corte de autor y peinado con producto premium.",
+      "rating": 4.9,
+      "popular": true
+    },
+    {
+      "id": "fs-srv-fade-sig",
+      "name": "Fade Signature & Styling",
+      "category": "Corte y Estilo",
+      "type": "service",
+      "price": 520,
+      "durationMinutes": 40,
+      "image": "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=800&auto=format&fit=crop&q=60",
+      "description": "Degradado milimétrico de precisión (skin, drop, taper), perfilado de contornos con navaja y fijación mate.",
+      "rating": 4.8
+    },
+    {
+      "id": "fs-srv-corte-inf",
+      "name": "Corte Infantil Premium",
+      "category": "Corte y Estilo",
+      "type": "service",
+      "price": 380,
+      "durationMinutes": 30,
+      "image": "https://images.unsplash.com/photo-1595867818082-083862f3d630?w=800&auto=format&fit=crop&q=60",
+      "description": "Experiencia cómoda, rápida y estilizada para los más pequeños, con acabado moderno y peinado suave.",
+      "rating": 4.7
+    },
+    {
+      "id": "fs-srv-barba-rit",
+      "name": "Ritual de Barba Spa con Toalla Caliente",
+      "category": "Barbería Tradicional",
+      "type": "service",
+      "price": 480,
+      "durationMinutes": 35,
+      "image": "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&auto=format&fit=crop&q=60",
+      "description": "Vapor de ozono, doble toalla caliente con aceites esenciales, afeitado tradicional a navaja y bálsamo calmante.",
+      "rating": 4.9,
+      "popular": true
+    },
+    {
+      "id": "fs-srv-barba-alin",
+      "name": "Alineación y Perfilado de Barba",
+      "category": "Barbería Tradicional",
+      "type": "service",
+      "price": 320,
+      "durationMinutes": 25,
+      "image": "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=800&auto=format&fit=crop&q=60",
+      "description": "Definición nítida de líneas de mejilla y cuello con tijera, máquina y navaja de precisión.",
+      "rating": 4.8
+    },
+    {
+      "id": "fs-srv-afeit-craneal",
+      "name": "Afeitado Craneal Tradicional",
+      "category": "Barbería Tradicional",
+      "type": "service",
+      "price": 450,
+      "durationMinutes": 35,
+      "image": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&auto=format&fit=crop&q=60",
+      "description": "Afeitado total de cabeza con crema emoliente espumada a mano, navaja japonesa y masaje craneal hidratante.",
+      "rating": 4.9
+    },
+    {
+      "id": "fs-srv-balayage",
+      "name": "Balayage & Iluminación Sublime",
+      "category": "Colorimetría",
+      "type": "service",
+      "price": 2400,
+      "durationMinutes": 180,
+      "image": "https://images.unsplash.com/photo-1560869713-7d0a29430803?w=800&auto=format&fit=crop&q=60",
+      "description": "Técnica a mano alzada para crear degradados naturales y dimensión luminosa, incluye matiz y sellado.",
+      "rating": 5.0,
+      "popular": true
+    },
+    {
+      "id": "fs-srv-decoloracion",
+      "name": "Decoloración Global / Platinado Master",
+      "category": "Colorimetría",
+      "type": "service",
+      "price": 2800,
+      "durationMinutes": 210,
+      "image": "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=800&auto=format&fit=crop&q=60",
+      "description": "Aclaración de alta pureza con plex protector de enlaces, neutralización de tonos y mascarilla reparadora.",
+      "rating": 4.9
+    },
+    {
+      "id": "fs-srv-canas",
+      "name": "Camuflaje de Canas Express (Hombre)",
+      "category": "Colorimetría",
+      "type": "service",
+      "price": 550,
+      "durationMinutes": 30,
+      "image": "https://images.unsplash.com/photo-1517832606589-7629c3395907?w=800&auto=format&fit=crop&q=60",
+      "description": "Matización rápida y natural de canas sin efecto raíz ni tonos rojizos en solo 15 minutos de exposición.",
+      "rating": 4.7
+    },
+    {
+      "id": "fs-srv-detox-ozono",
+      "name": "Terapia Detox Cuero Cabelludo & Ozono",
+      "category": "Tratamientos Capilares",
+      "type": "service",
+      "price": 850,
+      "durationMinutes": 50,
+      "image": "https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=800&auto=format&fit=crop&q=60",
+      "description": "Exfoliación capilar profunda, nebulización de micro-ozono purificante y serum fortalecedor anti-caída.",
+      "rating": 4.9
+    },
+    {
+      "id": "fs-srv-keratina",
+      "name": "Keratina Disciplinante Pro & Brillo Espejo",
+      "category": "Tratamientos Capilares",
+      "type": "service",
+      "price": 1950,
+      "durationMinutes": 120,
+      "image": "https://images.unsplash.com/photo-1562322140-8baeececf3df?w=800&auto=format&fit=crop&q=60",
+      "description": "Sellado térmico de queratina botánica para eliminar el frizz, reducir volumen y aportar nutrición extrema.",
+      "rating": 4.8
+    },
+    {
+      "id": "fs-srv-manicura-rusa",
+      "name": "Manicura Spa Rusa & Esmaltado Semipermanente",
+      "category": "Manicura & Pedicura",
+      "type": "service",
+      "price": 590,
+      "durationMinutes": 60,
+      "image": "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=800&auto=format&fit=crop&q=60",
+      "description": "Limpieza de cutículas con torno de precisión, exfoliación hidratante y esmaltado de alta duración.",
+      "rating": 4.9
+    },
+    {
+      "id": "fs-prd-olaplex3",
+      "name": "Olaplex No. 3 Hair Perfector (100ml)",
+      "category": "Cuidado Capilar",
+      "type": "product",
+      "price": 780,
+      "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&auto=format&fit=crop&q=60",
+      "description": "Tratamiento pre-lavado reconstructor de enlaces disulfuro para cabello quebradizo o procesado.",
+      "rating": 4.9
+    },
+    {
+      "id": "fs-prd-kerastase-oil",
+      "name": "Kérastase Elixir Ultime L'Huile Originale (100ml)",
+      "category": "Cuidado Capilar",
+      "type": "product",
+      "price": 1150,
+      "image": "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=800&auto=format&fit=crop&q=60",
+      "description": "Aceite capilar sublime con extracto de camelia sagrada y argán para brillo y control térmico hasta 230°C.",
+      "rating": 5.0,
+      "popular": true
+    },
+    {
+      "id": "fs-srv-masterclass",
+      "name": "Masterclass: Técnicas de Fade & Visagismo",
+      "category": "Masterclasses & Packs",
+      "type": "service",
+      "price": 3500,
+      "durationMinutes": 240,
+      "image": "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&auto=format&fit=crop&q=60",
+      "description": "Capacitación intensiva 1 a 1 de 4 horas con Master Barber. Incluye kit de tijeras de corte y diploma.",
+      "rating": 5.0
+    },
+    {
+      "id": "fs-srv-experiencia-completa",
+      "name": "Experiencia Completa Fashion Style VIP",
+      "category": "Masterclasses & Packs",
+      "type": "service",
+      "price": 1450,
+      "durationMinutes": 90,
+      "image": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&auto=format&fit=crop&q=60",
+      "description": "Corte de Autor + Ritual de Barba Spa + Lavado con Masaje Craneal + Bebida de cortesía de la casa.",
+      "rating": 5.0,
+      "popular": true
+    }
+  ]
+}
