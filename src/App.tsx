@@ -1,143 +1,59 @@
-import React, { useState, useMemo } from 'react';
-import { STORE_CONFIG } from './config/store.config';
-import { ItemType, StoreItem, CartItem } from './types/store';
-import { StoreNavbar } from './components/StoreNavbar';
-import { HeroBanner } from './components/HeroBanner';
-import { HeroTypeDropdown } from './components/HeroTypeDropdown';
-import { HeroCategoriesBar } from './components/HeroCategoriesBar';
-import { HeroProductCard } from './components/HeroProductCard';
-import { HeroScheduleModal } from './components/HeroScheduleModal';
-import { HeroFloatingCart } from './components/HeroFloatingCart';
-import { HeroCheckoutPanel } from './components/HeroCheckoutPanel';
-import { StoreFooter } from './components/StoreFooter';
+import { useEffect, useRef, useState } from 'react';
+import { createStorefrontApi } from './lib/api';
+import type { GuestLink, StorefrontApi } from './lib/api';
+import type { BookingResult, PublicService, Storefront } from './lib/contracts';
+import { StorefrontLayout, ServiceCard, ReservationSummary, readinessMessages } from './components/StorefrontLayout';
+import { BookingDialog } from './components/BookingDialog';
+import { BookingReceipt } from './components/BookingReceipt';
+import { GuestManagement } from './components/GuestManagement';
+import { ManagementLink } from './components/ManagementLink';
+import { applyPreviewMedia } from './lib/preview-media';
+import { Icon } from './components/StorefrontIcons';
 import './styles/store.css';
 
-export const App: React.FC = () => {
-  const [selectedType, setSelectedType] = useState<ItemType | 'all'>('all');
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [activeScheduleItem, setActiveScheduleItem] = useState<StoreItem | null>(null);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
-
-  const serviceCount = useMemo(
-    () => STORE_CONFIG.items.filter((i) => i.type === 'service').length,
-    []
-  );
-
-  const productCount = useMemo(
-    () => STORE_CONFIG.items.filter((i) => i.type === 'product').length,
-    []
-  );
-
-  const filteredItems = useMemo(() => {
-    return STORE_CONFIG.items.filter((item) => {
-      const matchType = selectedType === 'all' || item.type === selectedType;
-      const matchCat = selectedCategory === 'Todos' || item.category === selectedCategory;
-      return matchType && matchCat;
-    });
-  }, [selectedType, selectedCategory]);
-
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { Todos: 0 };
-    STORE_CONFIG.items.forEach((item) => {
-      if (selectedType === 'all' || item.type === selectedType) {
-        counts['Todos'] = (counts['Todos'] || 0) + 1;
-        counts[item.category] = (counts[item.category] || 0) + 1;
-      }
-    });
-    return counts;
-  }, [selectedType]);
-
-  const handleCardAction = (item: StoreItem) => {
-    if (item.type === 'service') {
-      setActiveScheduleItem(item);
-    } else {
-      setCartItems((prev) => {
-        const existingIdx = prev.findIndex((ci) => ci.item.id === item.id);
-        if (existingIdx > -1) {
-          const next = [...prev];
-          next[existingIdx].quantity += 1;
-          return next;
-        }
-        return [...prev, { item, quantity: 1 }];
-      });
-    }
-  };
-
-  const handleConfirmSchedule = (scheduledItem: CartItem) => {
-    setCartItems((prev) => [...prev, scheduledItem]);
-  };
-
-  const handleRemoveItem = (index: number) => {
-    setCartItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleClearCart = () => {
-    setCartItems([]);
-  };
-
-  const totalCartCount = cartItems.reduce((acc, curr) => acc + curr.quantity, 0);
-
-  return (
-    <div className="app-tienda-page">
-      <StoreNavbar
-        cartCount={totalCartCount}
-        onOpenCart={() => setIsCheckoutOpen(true)}
-      />
-
-      <HeroBanner />
-
-      <main className="app-tienda-main">
-        <HeroTypeDropdown
-          selectedType={selectedType}
-          onSelectType={setSelectedType}
-          serviceCount={serviceCount}
-          productCount={productCount}
-        />
-
-        <HeroCategoriesBar
-          categories={STORE_CONFIG.categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-          categoryCounts={categoryCounts}
-        />
-
-        <div className="app-tienda-grid">
-          {filteredItems.map((item) => (
-            <HeroProductCard
-              key={item.id}
-              item={item}
-              onAction={handleCardAction}
-            />
-          ))}
+const defaultApi = createStorefrontApi();
+export function App({ api = defaultApi, guestLink = null, linkError = '', paymentReturn = false }: { api?: StorefrontApi; guestLink?: GuestLink | null; linkError?: string; paymentReturn?: boolean }) {
+  const [site, setSite] = useState<Storefront | null>(null), [loading, setLoading] = useState(true), [error, setError] = useState(''), [retry, setRetry] = useState(0);
+  const [category, setCategory] = useState<string | null>(null), [service, setService] = useState<PublicService | null>(null), [result, setResult] = useState<BookingResult | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false), [search, setSearch] = useState('');
+  const [illustrativeMedia, setIllustrativeMedia] = useState(false);
+  const receiptContainer = useRef<HTMLDivElement>(null);
+  const [managingResult, setManagingResult] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true); setError('');
+    api.bootstrap(controller.signal).then(applyPreviewMedia).then(({ site: value, illustrativeMedia }) => { if (!controller.signal.aborted) { setIllustrativeMedia(illustrativeMedia); setSite(value); setCategory(null); setSearch(''); } }).catch((e: Error) => { if (!controller.signal.aborted) setError(e.message); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [api, retry]);
+  useEffect(() => { if (site) { document.title = `${site.name} | Reserva de servicios`; document.documentElement.lang = site.locale; } }, [site]);
+  useEffect(() => { if (result) receiptContainer.current?.focus(); }, [result]);
+  if (loading || error || !site) return <main className="connection-state" id="contenido"><h1>Reserva de servicios</h1>{loading ? <p role="status">Conectando con el negocio…</p> : <><p role="alert">{error || 'La información del negocio no está disponible.'}</p><button type="button" className="app-tienda-btn-confirm" onClick={() => setRetry(x => x + 1)}>Reintentar conexión</button></>}</main>;
+  const query = search.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase(site.locale);
+  const services = site.services.filter(item => (category === null || item.category === category) && `${item.name} ${item.description} ${item.category}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase(site.locale).includes(query));
+  const categories = [...new Set(site.services.map(s => s.category))];
+  return <StorefrontLayout site={site} illustrativeMedia={illustrativeMedia}>
+    <main className="app-tienda-main storefront-container" id="contenido">
+      {linkError ? <p role="alert" className="notice">{linkError}</p> : guestLink?.type === 'manage' ? <GuestManagement api={api} site={site} token={guestLink.token} /> : guestLink?.type === 'receipt' ? <BookingReceipt api={api} site={site} token={guestLink.token} /> : paymentReturn ? <div className="notice"><h2>Consulta el estado de tu reserva</h2><p>Esta página no verifica un pago. Abre tu enlace privado o contacta al negocio con tu referencia.</p></div> : null}
+      {result && <div ref={receiptContainer} tabIndex={-1}>
+        {managingResult ? <GuestManagement key={result.receipt.reference} site={site} api={api} token={result.managementToken} /> : <><BookingReceipt key={result.receipt.reference} site={site} api={api} initial={result.receipt} token={result.receiptToken} managementToken={result.managementToken} autoCheckout />
+        <ManagementLink token={result.managementToken} onManage={() => { setManagingResult(true); receiptContainer.current?.focus(); }} /></>}
+      </div>}
+      {!site.booking.ready && <div className="notice" role="status"><h2>Reservas en línea no disponibles</h2>{site.booking.unavailableReasons.map(reason => <p key={reason}>{readinessMessages[reason]}</p>)}<button type="button" className="secondary-button" onClick={() => setRetry(x => x + 1)}>Actualizar disponibilidad del sitio</button></div>}
+      <div className="catalog-toolbar">
+        <div className="app-tienda-categories-bar" role="group" aria-label="Filtrar servicios por categoría">
+          <button className={`app-tienda-cat-chip ${category === null ? 'active' : ''}`} aria-pressed={category === null} type="button" onClick={() => setCategory(null)}>Todos</button>
+          {categories.map(cat => <button key={cat} type="button" className={`app-tienda-cat-chip ${category === cat ? 'active' : ''}`} aria-pressed={category === cat} onClick={() => setCategory(cat)}>{cat}</button>)}
         </div>
-      </main>
-
-      <StoreFooter />
-
-      {activeScheduleItem && (
-        <HeroScheduleModal
-          item={activeScheduleItem}
-          isOpen={Boolean(activeScheduleItem)}
-          onClose={() => setActiveScheduleItem(null)}
-          onConfirmSchedule={handleConfirmSchedule}
-        />
-      )}
-
-      <HeroFloatingCart
-        cartItems={cartItems}
-        onOpenCheckout={() => setIsCheckoutOpen(true)}
-      />
-
-      <HeroCheckoutPanel
-        isOpen={isCheckoutOpen}
-        cartItems={cartItems}
-        onClose={() => setIsCheckoutOpen(false)}
-        onRemoveItem={handleRemoveItem}
-        onClearCart={handleClearCart}
-      />
-    </div>
-  );
-};
-
+        <label className="catalog-search"><Icon name="search" /><input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar servicio" aria-label="Buscar servicio" /></label>
+      </div>
+      <div className="catalog-heading"><h2>{query ? 'Resultados de búsqueda' : category ?? 'Todos los servicios'}</h2><span aria-live="polite">{services.length} {services.length === 1 ? 'resultado' : 'resultados'}</span></div>
+      {services.length ? <div className="app-tienda-grid">{services.map(item => <ServiceCard key={item.id} site={site} service={item} selected={service?.id === item.id} onBook={() => { setService(item); setDrawerOpen(false); }} />)}</div> : <div className="catalog-empty"><Icon name="search" /><p>{query ? 'No encontramos servicios con esa búsqueda.' : 'No hay servicios publicados en esta categoría.'}</p>{query && <button type="button" className="secondary-button" onClick={() => setSearch('')}>Limpiar búsqueda</button>}</div>}
+      {site.booking.payment === 'none' && <p className="catalog-payment-note">Sin pago en línea</p>}
+    </main>
+    {service && <>
+      <ReservationSummary site={site} service={service} onOpen={() => setDrawerOpen(true)} onRemove={() => setService(null)} />
+      <BookingDialog key={service.id} open={drawerOpen} site={site} service={service} api={api} onClose={() => setDrawerOpen(false)} onReload={() => { setService(null); setDrawerOpen(false); setRetry(x => x + 1); }} onBooked={value => { setResult(value); setManagingResult(false); setService(null); setDrawerOpen(false); }} />
+    </>}
+  </StorefrontLayout>;
+}
 export default App;

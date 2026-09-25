@@ -1,0 +1,10 @@
+{
+  "nodeModulesDir": "none",
+  "lock": false,
+  "deploy": {
+    "runtime": {
+      "type": "dynamic",
+      "entrypoint": "server/deno.ts"
+    }
+  }
+}

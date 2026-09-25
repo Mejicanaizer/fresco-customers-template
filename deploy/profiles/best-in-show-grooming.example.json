@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "profile": "best-in-show-grooming",
+  "local": {
+    "siteId": "best-in-show-grooming",
+    "ownerApiOrigin": "http://127.0.0.1:5372",
+    "publicOrigin": "http://127.0.0.1:5373",
+    "ownerApiToken": "REPLACE_WITH_LOCAL_GATEWAY_ADMISSION_TOKEN"
+  },
+  "production": {
+    "org": "lugearma",
+    "app": "best-in-show-grooming-customers",
+    "siteId": "REPLACE_WITH_PRODUCTION_OWNER_ISSUED_SITE_ID",
+    "ownerApiOrigin": "https://best-in-show-grooming.lugearma.deno.net",
+    "publicOrigin": "https://replace-customer.invalid",
+    "ownerApiToken": "REPLACE_WITH_PRODUCTION_GATEWAY_ADMISSION_TOKEN"
+  }
+}

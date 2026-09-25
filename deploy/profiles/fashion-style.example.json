@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "profile": "fashion-style",
+  "local": {
+    "siteId": "REPLACE_WITH_OWNER_ISSUED_SITE_ID",
+    "ownerApiOrigin": "http://127.0.0.1:5371",
+    "publicOrigin": "http://127.0.0.1:5383",
+    "ownerApiToken": "REPLACE_WITH_LOCAL_GATEWAY_ADMISSION_TOKEN"
+  },
+  "production": {
+    "org": "lugearma",
+    "app": "fashion-style-customers",
+    "siteId": "REPLACE_WITH_PRODUCTION_OWNER_ISSUED_SITE_ID",
+    "ownerApiOrigin": "https://fashion-style.lugearma.deno.net",
+    "publicOrigin": "https://replace-customer.invalid",
+    "ownerApiToken": "REPLACE_WITH_PRODUCTION_GATEWAY_ADMISSION_TOKEN"
+  }
+}
