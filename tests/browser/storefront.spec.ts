@@ -23,6 +23,23 @@ async function fillSalon(page: Page) {
   await page.getByLabel('Nombre completo').fill('Persona de Prueba');
   await page.getByLabel('Teléfono (10 dígitos)', { exact: true }).fill('5500000000');
 }
+test('public config URL serves the matching live owner projection on both Node deployments', async ({ request }) => {
+  for (const [port, siteId] of [[5375, 'salon'], [5376, 'grooming']] as const) {
+    const origin = `http://127.0.0.1:${port}`;
+    const response = await request.get(`${origin}/store.config.json`);
+    expect(response.status()).toBe(200);
+    expect(response.headers()['cache-control']).toBe('no-store');
+    expect(response.headers()['access-control-allow-origin']).toBeUndefined();
+    const data = await response.json();
+    expect(data).toEqual(await (await request.get(`${origin}/api/storefront/v1/bootstrap`)).json());
+    expect(data.siteId).toBe(siteId);
+    expect(JSON.stringify(data)).not.toMatch(/DO_NOT_EXPOSE|privateSecret|contacto@fashionstyle|storeName|employees|items/);
+    expect((await request.get(`${origin}/store.config.json?siteId=foreign`)).status()).toBe(400);
+    expect((await request.get(`${origin}/store.config.json`, { headers: { Origin: 'https://foreign.test' } })).status()).toBe(403);
+    expect((await request.post(`${origin}/store.config.json`, { headers: { Origin: origin }, data: {} })).status()).toBe(404);
+    expect(await (await request.get(`http://127.0.0.1:${port === 5375 ? 5491 : 5492}/__test/writes`)).text()).toBe('0');
+  }
+});
 test('two production builds use runtime binding, distinct catalogs and timezone-correct slots', async ({ page }, testInfo) => {
   const response = await page.goto('/');
   expect(response?.headers()['cache-control']).toBe('no-store');

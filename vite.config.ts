@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { createGateway, deploymentFromEnv } from './server/gateway';
+import { createGateway, deploymentFromEnv, publicConfigPath } from './server/gateway';
 import { serveApi } from './server/node-handler';
 
 // https://vite.dev/config/
@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
         const deployment = deploymentFromEnv({ ...loadEnv(mode, process.cwd(), 'STOREFRONT_'), ...process.env });
         const gateway = createGateway(deployment);
         server.middlewares.use((req, res, next) => {
-          if (!req.url?.startsWith('/api/')) return next();
+          if (!req.url?.startsWith('/api/') && req.url?.split('?')[0] !== publicConfigPath) return next();
           // No binding yields a visible 503. There is no production/demo fallback.
           void serveApi(req, res, deployment?.publicOrigin ?? 'http://127.0.0.1:5373', gateway);
         });

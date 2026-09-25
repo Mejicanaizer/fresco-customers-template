@@ -83,6 +83,11 @@ async function main() {
     assert.equal(response.status, 200); assert.equal(response.headers['cache-control'], 'no-store');
     const site = JSON.parse(response.body); assert.equal(site.siteId, deployment.site.siteId); assert.equal(site.name, deployment.site.name);
     assert.doesNotMatch(response.body, /DO_NOT_EXPOSE|privateSecret/);
+    const publicConfig = await http(deployment.port, '/store.config.json');
+    assert.equal(publicConfig.status, 200); assert.equal(publicConfig.headers['cache-control'], 'no-store');
+    assert.deepEqual(JSON.parse(publicConfig.body), site);
+    assert.equal(publicConfig.headers['access-control-allow-origin'], undefined);
+    assert.equal((await http(deployment.port, '/store.config.json?siteId=other')).status, 400);
     const upstream = deployment.owner.requests.at(-1)!;
     assert.equal(upstream.headers.get('authorization'), `Bearer ${deployment.token}`);
     assert.equal(upstream.headers.get('x-fresco-site'), deployment.site.siteId);
@@ -96,6 +101,7 @@ async function main() {
   const rejectedHeaders: Record<string, string>[] = [{ Host: 'foreign.example', 'X-Forwarded-Host': new URL(first.publicOrigin).host }, { Origin: second.publicOrigin }, { 'Sec-Fetch-Site': 'cross-site' }];
   for (const headers of rejectedHeaders) {
     assert.equal((await http(first.port, '/api/storefront/v1/bootstrap', headers)).status, 403);
+    assert.equal((await http(first.port, '/store.config.json', headers)).status, 403);
   }
   assert.equal(first.owner.requests.length, before);
   const post = (deployment: typeof first, path: string, body: unknown, origin = deployment.publicOrigin, key = crypto.randomUUID()) => http(deployment.port, `/api/storefront/v1/${path}`, { Origin: origin, 'Content-Type': 'application/json', 'Idempotency-Key': key }, 'POST', JSON.stringify(body));
@@ -152,7 +158,7 @@ async function main() {
     // Even accidentally supplied real-looking variables must never load the gateway or assets.
     const env = { ...prod, STOREFRONT_OWNER_API_ORIGIN: first.origin, PORT: String(port), DENO_TIMELINE: timeline };
     await launch(stage, env, [], false).ready();
-    for (const path of ['/', '/api/storefront/v1/bootstrap', '/api/storefront/v1/bookings', '/' + artifact.manifest.files.find(file => file.path.endsWith('.js'))!.path.slice(5)]) {
+    for (const path of ['/', '/store.config.json', '/api/storefront/v1/bootstrap', '/api/storefront/v1/bookings', '/' + artifact.manifest.files.find(file => file.path.endsWith('.js'))!.path.slice(5)]) {
       const result = await http(port, path, { Host: 'arbitrary-preview.example' });
       assert.equal(result.status, 503); assert.equal(result.headers['cache-control'], 'no-store');
       assert.equal(result.body, 'Storefront preview is unavailable.');

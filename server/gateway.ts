@@ -16,6 +16,8 @@ export function deploymentFromEnv(env: Record<string, string | undefined>): Depl
   return { siteId: id(values[0]), ownerApiOrigin: origin(values[1]!), publicOrigin: origin(values[2]!), ownerApiToken };
 }
 export const apiPrefix = '/api/storefront/v1/';
+/** Compatibility URL for public catalog consumers; never a raw runtime/config dump. */
+export const publicConfigPath = '/store.config.json';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function jsonResponse(status: number, value: unknown): Response {
   return Response.json(value, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Vary': 'Origin' } });
@@ -54,11 +56,12 @@ type PostOperation = keyof typeof parsers;
 export function createGateway(deployment: Deployment | null, fetcher: typeof fetch = fetch) {
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
-    if (!url.pathname.startsWith(apiPrefix)) return jsonResponse(404, { code: 'not_found' });
+    const publicConfig = url.pathname === publicConfigPath;
+    if (!publicConfig && !url.pathname.startsWith(apiPrefix)) return jsonResponse(404, { code: 'not_found' });
     if (!deployment) return jsonResponse(503, { code: 'not_configured' });
     // The adapter constructs the URL from the configured origin. Host is separately checked there.
     if (url.origin !== deployment.publicOrigin || (request.headers.has('origin') && request.headers.get('origin') !== deployment.publicOrigin) || request.headers.get('sec-fetch-site') === 'cross-site') return jsonResponse(403, { code: 'origin_rejected' });
-    const operation = url.pathname.slice(apiPrefix.length);
+    const operation = publicConfig ? 'bootstrap' : url.pathname.slice(apiPrefix.length);
     const isRead = operation === 'bootstrap' || operation === 'availability';
     if (!(isRead ? request.method === 'GET' : Object.hasOwn(parsers, operation) && request.method === 'POST')) return jsonResponse(404, { code: 'not_found' });
     if (!isRead && request.headers.get('origin') !== deployment.publicOrigin) return jsonResponse(403, { code: 'origin_rejected' });

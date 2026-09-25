@@ -25,6 +25,7 @@ Unconfigured deployments fail visibly; there is no sample-business fallback.
 - [Implementation checkpoint](docs/IMPLEMENTATION_CHECKPOINT.md): historical unpaid milestone.
 - [Reusable architecture](docs/REUSABLE_STOREFRONT.md): runtime and deployment ownership.
 - [Owner API contract](docs/OWNER_API_CONTRACT.md): exact upstream boundary and policy gates.
+- [Public catalog JSON](docs/PUBLIC_CONFIG.md): `/store.config.json` compatibility URL for owner-backed catalog consumers.
 - [Implementation readiness](docs/IMPLEMENTATION_READINESS.md): historical unpaid integration boundaries.
 - [Deno Deploy operator guide](docs/DENO_DEPLOY.md): two private business profiles, clean local-source staging and deployment gates.
 

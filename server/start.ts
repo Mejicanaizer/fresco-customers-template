@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import process from 'node:process';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
-import { createGateway, deploymentFromEnv } from './gateway.ts';
+import { createGateway, deploymentFromEnv, publicConfigPath } from './gateway.ts';
 import { serveApi } from './node-handler.ts';
 
 const deployment = deploymentFromEnv(process.env);
@@ -11,7 +11,7 @@ const gateway = createGateway(deployment);
 const root = resolve('dist');
 const mime: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png', '.ico': 'image/x-icon' };
 const server = createServer(async (req, res) => {
-  if (req.url?.startsWith('/api/')) { await serveApi(req, res, deployment.publicOrigin, gateway); return; }
+  if (req.url?.startsWith('/api/') || req.url?.split('?')[0] === publicConfigPath) { await serveApi(req, res, deployment.publicOrigin, gateway); return; }
   if (req.headers.host !== new URL(deployment.publicOrigin).host) { res.writeHead(403); res.end(); return; }
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); res.end(); return; }
   try {

@@ -1,9 +1,11 @@
 # Customer source validation — September 25, 2026
 
-This source release captures the customer implementation already deployed to
-Fashion Style and Best in Show Grooming. It does not change product behavior,
-hosted configuration, owner data or the MXN149 sandbox deposit policy. The owner
-supplies all prices, deposit amounts, slots, booking policy and payment status.
+The initial source commit captures the customer implementation already deployed
+to Fashion Style and Best in Show Grooming. A subsequent merge reconciles the
+teammate's public config URL with the owner-backed gateway; see
+[the public JSON contract](PUBLIC_CONFIG.md). Booking UI, payment behavior,
+hosted configuration, owner data and the MXN149 sandbox deposit policy are
+unchanged. The owner supplies all prices, deposits, slots and booking/payment policy.
 
 ## Included scope
 
@@ -22,7 +24,7 @@ profiles, journals, emails and customer data are excluded. Generated build outpu
 test output and TypeScript build caches are ignored. Illustrative preview images
 are project-owned synthetic assets and are excluded from production artifacts.
 
-## Local verification
+## Initial source commit verification
 
 All checks used a sanitized process environment. The release build disables
 dotenv and development preview media. Fixture browser requests to Stripe are
@@ -42,13 +44,40 @@ the restored catalog geometry. It uses synthetic owners and private test profile
 The Deno suite additionally checks Host/Origin enforcement, private paths,
 response headers, replay and inert preview timelines.
 
-The clean build reproduces the September 24 deployed application artifact exactly:
+The initial source commit's clean build reproduces the September 24 deployed
+application artifact exactly:
 
 - Manifest SHA-256: `839d3f03f020b5ff2ae2d6e32436a36fb4ffca506c175838bcad5d6a04700330`.
 - Nine allowlisted files, 333457 bytes, plus the manifest.
 - Client assets: `index-DKrjhMPX.js` and `index-ClJRhY9Q.css`.
 
-The tested repository `dist` bytes match that fresh isolated artifact. Detailed
+The tested repository `dist` bytes match that initial isolated artifact. Detailed
 logs, screenshots and artifact locations remain outside version control. The
 historical [hosted release record](HOSTED_ACCEPTANCE.md) identifies the deployed
 customer revisions; current hosted payment acceptance remains owner-controlled.
+
+## Remote main reconciliation
+
+Remote main advanced through merged PR #1 (`3e8b8a6`), adding a static sample
+`public/store.config.json`. A true merge retains that history and the reviewed
+source commit `bb120c1`. The runtime now serves that URL from the same validated
+owner bootstrap projection; the sample snapshot remains in history and is not
+copied into public build output. The [public schema and consumer migration](PUBLIC_CONFIG.md)
+are explicit. No open PRs remained when this repository was checked.
+
+The three new focused tests first failed on the missing runtime route, then
+passed after the alias was implemented. Fresh catalog changes and empty catalogs,
+private-field stripping, fixed-site admission, sanitized errors, disallowed
+methods/queries/origins and absence of sample fallback are covered. The actual
+Node, Deno and Vite adapters were exercised with synthetic owners.
+
+- `npm test`: 60 passed.
+- Chrome Playwright suite: 32 passed, including both Node catalog aliases.
+- Fresh isolated TypeScript/Vite build and Deno type/runtime integration: passed.
+- Actual Vite-config smoke check: passed from an empty dotenv directory.
+
+The new nine-file artifact has 333770 payload bytes and manifest SHA-256
+`b8d7b4f4bfa4e4c010bc0adb0c52f74f323e99e32dfda86135a23f9f67876121`.
+Only `server/gateway.ts` and `server/start.ts` differ from the initial sealed
+artifact. All client assets are unchanged. This reconciliation has not been
+deployed; it does not alter the currently hosted payment policy or business data.
