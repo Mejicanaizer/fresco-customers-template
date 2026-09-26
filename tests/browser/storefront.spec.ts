@@ -10,6 +10,7 @@ test.beforeEach(async ({ request, page }) => {
   await page.route('https://checkout.stripe.com/**', route => route.fulfill({ contentType: 'text/html', body: '<title>Synthetic Checkout</title><h1>Synthetic Checkout — no payment</h1>' }));
 });
 async function returnFromCheckout(page: Page, site = makeSite()) {
+  await page.getByRole('link', { name: 'Pagar anticipo en Stripe' }).click();
   await expect(page).toHaveURL(/^https:\/\/checkout\.stripe\.com\//);
   const origin = site.siteId === 'grooming' ? 'http://127.0.0.1:5376' : 'http://127.0.0.1:5375';
   await page.goto(`${origin}/reserva/pago#manage=${managementToken(site)}`);

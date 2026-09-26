@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { PaymentStatus, Receipt, ReceiptState, Storefront } from '../lib/contracts';
 import { formatAppointment, formatMoney } from '../lib/contracts';
 import type { StorefrontApi } from '../lib/api';
 import { handoffCheckout } from '../lib/payment';
+import { EmbeddedPayment } from './EmbeddedPayment';
 import { useBookingStatus } from '../lib/useBookingStatus';
 
 const statusText: Record<ReceiptState, [string, string]> = {
@@ -43,35 +44,29 @@ export function ReceiptDetails({ receipt, site, onCheckout, checkoutEnabled = tr
     </div>}
     <p className="field-help">{notifications[receipt.notification]}</p>
     <p className="field-help">Condiciones aceptadas: {receipt.terms.text}</p>
-    {receipt.checkout && <div className="notice"><p>El enlace de pago vence el {formatAppointment(receipt.checkout.expiresAt, site)}.</p>
+    {receipt.checkout && receipt.checkout.mode !== 'embedded' && <div className="notice"><p>El enlace de pago vence el {formatAppointment(receipt.checkout.expiresAt, site)}.</p>
       {Date.parse(receipt.checkout.expiresAt) > Date.now() ? checkoutEnabled && onCheckout ? <a className="app-tienda-btn-confirm payment-link" href={receipt.checkout.url} rel="noreferrer" onClick={event => { event.preventDefault(); onCheckout(); }}>Pagar anticipo en Stripe</a> : <p>Consulta el estado del anticipo antes de continuar al pago.</p> : <p>El enlace venció. Actualiza el estado antes de continuar.</p>}
     </div>}
   </div>;
 }
 const receiptOf = (value: Receipt) => value;
-export function BookingReceipt({ api, site, token, initial, managementToken, autoCheckout = false }: { api: StorefrontApi; site: Storefront; token: string; initial?: Receipt; managementToken?: string; autoCheckout?: boolean }) {
+export function BookingReceipt({ api, site, token, initial, managementToken }: { api: StorefrontApi; site: Storefront; token: string; initial?: Receipt; managementToken?: string }) {
   const read = useCallback((signal: AbortSignal) => api.status(site, token, signal), [api, site, token]);
   const { value: receipt, loading, error, verified, refresh } = useBookingStatus({ read, receiptOf, initial });
-  const redirected = useRef(false), [checkoutError, setCheckoutError] = useState('');
+  const [checkoutError, setCheckoutError] = useState('');
   const checkout = useCallback(() => {
     if (!receipt || !verified || loading || error) return;
     try { handoffCheckout(receipt, { type: managementToken ? 'manage' : 'receipt', token: managementToken ?? token }, window); }
     catch { setCheckoutError('No pudimos abrir el pago. Conserva tu enlace privado y actualiza el estado para continuar.'); }
   }, [receipt, verified, loading, error, managementToken, token]);
-  useEffect(() => {
-    // Original create/replay is immutable. Reconcile first, so a lost create reply
-    // cannot redirect a now-paid booking back to its original Checkout session.
-    if (autoCheckout && !redirected.current && verified && !loading && !error && receipt) {
-      redirected.current = true;
-      if (receipt.state === 'awaiting_payment' && receipt.checkout && Date.parse(receipt.checkout.expiresAt) > Date.now()) checkout();
-    }
-  }, [autoCheckout, verified, loading, error, receipt, checkout]);
   return <section className="booking-status" aria-label="Estado de tu reserva" tabIndex={-1}>
     {receipt && <ReceiptDetails receipt={receipt} site={site} onCheckout={checkout} checkoutEnabled={verified && !loading && !error} />}
+    {receipt?.checkout?.mode === 'embedded' && verified && receipt.state === 'awaiting_payment' &&
+      <EmbeddedPayment checkout={receipt.checkout} onComplete={() => { void refresh(); }} />}
     {loading && <p role="status">Consultando el estado de tu reserva…</p>}
     {error && <p role="alert" className="form-error">{error}</p>}
     {checkoutError && <p role="alert" className="form-error">{checkoutError}</p>}
     <button className="secondary-button" type="button" disabled={loading} onClick={() => void refresh()}>Actualizar estado</button>
-    {receipt?.payment !== 'none' && <p className="field-help">Volver de Stripe no confirma el pago. Este estado proviene del negocio.</p>}
+    {receipt?.payment !== 'none' && <p className="field-help">La confirmación del pago y de tu cita se verifica con el negocio.</p>}
   </section>;
 }

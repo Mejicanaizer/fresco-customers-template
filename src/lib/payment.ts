@@ -26,7 +26,7 @@ export function handoffCheckout(receipt: Receipt, link: GuestLink, navigation: {
   history: Pick<History, 'replaceState'>;
   location: Pick<Location, 'assign' | 'pathname'>;
 }, now = Date.now()) {
-  if (receipt.payment !== 'stripe-deposit' || receipt.state !== 'awaiting_payment' || !receipt.checkout || Date.parse(receipt.checkout.expiresAt) <= now ||
+  if (receipt.payment !== 'stripe-deposit' || receipt.state !== 'awaiting_payment' || !receipt.checkout || receipt.checkout.mode === 'embedded' || Date.parse(receipt.checkout.expiresAt) <= now ||
       receipt.refund || (receipt.paymentStatus && !['unpaid', 'processing'].includes(receipt.paymentStatus))) throw new ContractError();
   const url = stripeUrl(receipt.checkout.url), token = capability(link.token);
   navigation.history.replaceState(null, '', `/reserva/pago#${link.type}=${encodeURIComponent(token)}`);

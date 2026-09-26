@@ -145,3 +145,17 @@ are unavailable until the owner implements private upload/ownership support.
 ## License
 
 MIT © 2026 Fresco Ecosystem
+
+### Embedded sandbox payments
+
+The owner backend may return `checkout.mode: "embedded"` with a sandbox session
+client secret, matching platform publishable key and expiry. The existing payment
+step mounts Stripe.js only after a verified receipt read. Stripe owns the secure
+fields; the customer gateway never receives card details. Completion refreshes
+owner status and does not claim payment or booking success on its own. Retries
+reuse the same session and command. Old hosted sessions remain available through
+an explicit payment link. No automatic navigation occurs for new checkout.
+
+Deploy this customer contract before enabling `STRIPE_PUBLISHABLE_KEY` in either
+owner app. Use the matching sandbox platform key; never put server secrets in
+Vite variables or public configuration.

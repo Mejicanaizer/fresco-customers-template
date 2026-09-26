@@ -6,6 +6,7 @@ import { createRequestId, StorefrontError } from '../lib/api';
 import { ReceiptDetails } from './BookingReceipt';
 import { SlotPicker } from './SlotPicker';
 import { ManagementLink } from './ManagementLink';
+import { EmbeddedPayment } from './EmbeddedPayment';
 import { handoffCheckout } from '../lib/payment';
 import { useBookingStatus } from '../lib/useBookingStatus';
 
@@ -49,6 +50,8 @@ export function GuestManagement({ site, api, token }: { site: Storefront; api: S
     {loading && <p role="status">Consultando tu enlace privado…</p>}
     {booking && <>
       <ReceiptDetails receipt={booking.receipt} site={site} onCheckout={checkout} checkoutEnabled={editable && !mode} />
+      {booking.receipt.checkout?.mode === 'embedded' && verified && !mode && !busy && !uncertain &&
+        <EmbeddedPayment checkout={booking.receipt.checkout} onComplete={() => { void load(); }} />}
       <p>Fecha límite para cambios: {formatAppointment(booking.actions.deadlineAt, site)} · {site.branch.timeZone}.</p>
       {!uncertain && <div className="button-row">
         <button className="secondary-button" type="button" disabled={!editable || !booking.actions.canReschedule} onClick={() => { setMode('reschedule'); setSlot(null); }}>Reprogramar cita</button>

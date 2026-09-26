@@ -235,3 +235,5 @@ svg { flex-shrink: 0; vertical-align: middle; }
 .time-buttons { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); }
 
 @media (pointer: coarse) { .time-button { min-height: 44px; } }
+
+.embedded-payment { width: 100%; min-width: 0; margin-block: 1rem; }

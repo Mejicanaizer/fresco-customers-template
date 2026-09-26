@@ -21,11 +21,14 @@ async function fill(page: Page) {
   await page.getByLabel('Teléfono (10 dígitos)', { exact: true }).fill('5500000000');
 }
 
-test('Checkout handoff and cancelled return reuse the existing booking without automatic redirect loop', async ({ page, request }) => {
+test('legacy Checkout explicit handoff and cancelled return reuse the existing booking without automatic redirect loop', async ({ page, request }) => {
   let sent: Record<string, unknown> | null = null;
   await page.route('**/api/storefront/v1/bookings', async route => { sent = route.request().postDataJSON(); await route.continue(); });
   await fill(page);
   await page.getByRole('button', { name: 'Continuar al anticipo' }).click();
+  await expect(page.getByRole('heading', { name: 'Anticipo pendiente' })).toBeVisible();
+  expect(page.url()).toBe('http://127.0.0.1:5375/');
+  await page.getByRole('link', { name: 'Pagar anticipo en Stripe' }).click();
   await expect(page).toHaveURL(receipt(site).checkout!.url);
   expect(sent).not.toHaveProperty('amount'); expect(sent).not.toHaveProperty('accountId'); expect(sent).not.toHaveProperty('email');
   await page.goBack();

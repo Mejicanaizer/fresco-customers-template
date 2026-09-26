@@ -1,0 +1,69 @@
+import { test, expect } from '@playwright/test';
+import type { Receipt } from '../../src/lib/contracts';
+import { makeSite, managementToken, receipt, receiptToken } from '../fixtures';
+const site = makeSite();
+function embedded(): Receipt {
+  return { ...receipt(site), paymentStatus: 'unpaid', checkout: { mode: 'embedded', clientSecret: 'cs_test_synthetic_secret_synthetic', publishableKey: 'pk_test_' + 'p'.repeat(32), expiresAt: new Date(Date.now() + 30 * 60_000).toISOString() } };
+}
+const mockSdk = `window.Stripe = function() { return { createEmbeddedCheckoutPage: async function(options) {
+  await options.fetchClientSecret();
+  let button;
+  return { mount: function(node) { button = document.createElement('button'); button.textContent = 'Simular pago seguro'; button.onclick = options.onComplete; node.append(button); }, destroy: function() { button?.remove(); } };
+} }; };`;
+test.beforeEach(async ({ page, request }) => {
+  await request.post('http://127.0.0.1:5491/__test/reset');
+  await page.route(/https:\/\//, route => route.abort());
+  await page.route('https://js.stripe.com/**', route => route.fulfill({ contentType: 'application/javascript', body: mockSdk }));
+});
+test('new booking keeps Stripe on the customer page and completion requires verified server facts', async ({ page }) => {
+  let current = embedded(), creates = 0, reads = 0;
+  await page.route('**/api/storefront/v1/bookings', route => { creates++; return route.fulfill({ json: { contractVersion: 1, siteId: site.siteId, receipt: current, receiptToken: receiptToken(site), managementToken: managementToken(site) } }); });
+  await page.route('**/api/storefront/v1/booking-status', route => { reads++; return route.fulfill({ json: current }); });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Agendar Corte de autor' }).click();
+  await page.getByRole('button', { name: 'Ver reserva', exact: true }).click();
+  await page.locator('[data-slot-id="salon-slot"]').click();
+  await page.getByLabel('Nombre completo').fill('Persona de Prueba');
+  await page.getByLabel('Teléfono (10 dígitos)', { exact: true }).fill('5500000000');
+  await page.getByRole('button', { name: 'Continuar al anticipo' }).click();
+  const pay = page.getByRole('button', { name: 'Simular pago seguro' });
+  await expect(pay).toBeVisible();
+  expect(page.url()).toBe('http://127.0.0.1:5375/');
+  const before = reads;
+  await pay.click(); await expect.poll(() => reads).toBeGreaterThan(before);
+  await expect(page.getByRole('heading', { name: 'Anticipo pendiente' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Cita confirmada' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Actualizar estado' }).click();
+  await expect(pay).toHaveCount(1);
+  current = { ...receipt(site, 'confirmed'), paymentStatus: 'paid' };
+  await pay.click();
+  await expect(page.getByRole('heading', { name: 'Cita confirmada' })).toBeVisible();
+  await expect(pay).toHaveCount(0); expect(creates).toBe(1);
+  expect(page.url()).toBe('http://127.0.0.1:5375/');
+  expect(await page.evaluate(() => [localStorage.length, sessionStorage.length])).toEqual([0, 0]);
+});
+test('private-link recovery retries Stripe load without a new booking and fits a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  let fail = true, creates = 0;
+  await page.route('https://js.stripe.com/**', route => fail ? route.abort() : route.fulfill({ contentType: 'application/javascript', body: mockSdk }));
+  await page.route('**/api/storefront/v1/bookings', route => { creates++; return route.abort(); });
+  await page.route('**/api/storefront/v1/guest-booking', route => route.fulfill({ json: { contractVersion: 1, siteId: site.siteId, receipt: embedded(), actions: { canCancel: false, canReschedule: false, deadlineAt: new Date(Date.parse(receipt(site).startsAt) - 86400000).toISOString(), unavailableReason: 'status_unavailable' } } }));
+  await page.goto(`/reserva#manage=${managementToken(site)}`);
+  await expect(page.getByRole('alert')).toContainText('No pudimos cargar el pago');
+  fail = false;
+  await page.getByRole('button', { name: 'Reintentar pago' }).click();
+  await expect(page.getByRole('button', { name: 'Simular pago seguro' })).toBeVisible();
+  expect(creates).toBe(0); expect(page.url()).not.toContain('#');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+test('expired embedded session is removed and never triggers a new charge or automatic navigation', async ({ page }) => {
+  await page.clock.install();
+  const current = embedded(); current.checkout!.expiresAt = new Date(Date.now() + 15_000).toISOString();
+  await page.route('**/api/storefront/v1/booking-status', route => route.fulfill({ json: current }));
+  await page.goto(`/reserva#receipt=${receiptToken(site)}`);
+  await expect(page.getByRole('button', { name: 'Simular pago seguro' })).toBeVisible();
+  await page.clock.runFor(16_000);
+  await expect(page.getByText('El tiempo para pagar venció.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Simular pago seguro' })).toHaveCount(0);
+  expect(page.url()).toBe('http://127.0.0.1:5375/reserva');
+});

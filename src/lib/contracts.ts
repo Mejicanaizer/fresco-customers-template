@@ -212,7 +212,8 @@ export interface Receipt {
   bookingRevision: number; branchId: string; serviceId: string; slotId: string; providerId: string; startsAt: string; endsAt: string;
   quote: { priceMinor: number; depositMinor: number; currency: string; currencyExponent: number };
   terms: { version: string; text: string };
-  checkout: { url: string; expiresAt: string } | null;
+  checkout: { mode?: 'hosted'; url: string; expiresAt: string } |
+    { mode: 'embedded'; clientSecret: string; publishableKey: string; expiresAt: string; url?: never } | null;
   notification: 'unconfigured' | 'not_sent' | 'queued' | 'sent' | 'delivered' | 'failed';
 }
 export function parseReceipt(input: unknown, siteId: string): Receipt {
@@ -225,7 +226,17 @@ export function parseReceipt(input: unknown, siteId: string): Receipt {
   const currency = string(q.currency, 3);
   if (!/^[A-Z]{3}$/.test(currency)) throw new ContractError();
   let checkout: Receipt['checkout'] = null;
-  if (v.checkout !== null) { const c = object(v.checkout); checkout = { url: stripeUrl(c.url), expiresAt: instant(c.expiresAt) }; }
+  if (v.checkout !== null) {
+    const c = object(v.checkout), expiresAt = instant(c.expiresAt);
+    if (c.mode === 'embedded') {
+      const clientSecret = string(c.clientSecret, 512), publishableKey = string(c.publishableKey, 255);
+      if (!/^cs_test_[A-Za-z0-9]+_secret_[A-Za-z0-9]+$/.test(clientSecret) || !/^pk_test_[A-Za-z0-9]{16,}$/.test(publishableKey) || c.url != null) throw new ContractError();
+      checkout = { mode: 'embedded', clientSecret, publishableKey, expiresAt };
+    } else {
+      if (c.mode !== undefined && c.mode !== 'hosted') throw new ContractError();
+      checkout = { url: stripeUrl(c.url), expiresAt };
+    }
+  }
   if ((state === 'awaiting_payment') !== (checkout !== null)) throw new ContractError();
   if (payment === 'none' && (checkout !== null || ['awaiting_payment', 'payment_processing', 'payment_review', 'expired'].includes(state))) throw new ContractError();
   // These additive fields are absent on older v1 owners. Never infer a paid/refunded

@@ -25,7 +25,7 @@ const server = createServer(async (req, res) => {
       'Content-Type': mime[extname(file)] ?? 'application/octet-stream',
       'Cache-Control': isPage ? 'no-store' : 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
-      'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https:; connect-src 'self' https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
     });
     res.end(req.method === 'HEAD' ? undefined : bytes);
   } catch { res.writeHead(404, { 'Cache-Control': 'no-store' }); res.end('Not found'); }

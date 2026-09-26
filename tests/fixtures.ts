@@ -30,7 +30,7 @@ export function bookingInput(site = makeSite()): BookingInput {
   return { revision: site.revision, expectedMode: site.booking.mode, serviceId: site.services[0].id, slotId: availability(site).slots[0].id, guest: { name: 'Persona de Prueba', whatsapp: '+525500000000' }, notes: '',
     pet: site.capabilities.grooming ? { name: 'Mascota de Prueba', sizeId: 'small', breed: 'Cruza', ageMonths: 24, behaviorNotes: '', groomingPreferences: '', photoUploadId: null } : null };
 }
-export function receipt(site = makeSite(), state: Receipt['state'] = 'awaiting_payment'): Receipt {
+export function receipt(site = makeSite(), state: Receipt['state'] = 'awaiting_payment'): Omit<Receipt, 'checkout'> & { checkout: { url: string; expiresAt: string } | null } {
   const slot = availability(site).slots[0];
   return { contractVersion: 1, siteId: site.siteId, reference: `${site.siteId}-reference`, bookingRevision: 1, state, payment: site.booking.payment,
     branchId: site.branch.id, serviceId: site.services[0].id, slotId: slot.id, providerId: slot.providerId, startsAt: slot.startsAt, endsAt: slot.endsAt,
