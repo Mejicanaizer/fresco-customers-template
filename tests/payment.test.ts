@@ -124,10 +124,10 @@ test('malformed payment status cannot overwrite a receipt', async () => {
 });
 
 test('embedded receipt accepts only sandbox credentials and never offers a redirect handoff', () => {
-  const site = makeSite(), checkout = { mode: 'embedded', clientSecret: 'cs_test_synthetic_secret_synthetic', publishableKey: 'pk_test_' + 'p'.repeat(32), expiresAt: receipt(site).checkout!.expiresAt };
+  const site = makeSite(), checkout = { mode: 'embedded', clientSecret: 'cs_test_synthetic_secret_synthetic%2Fencoded_part%3D', publishableKey: 'pk_test_' + 'p'.repeat(32), expiresAt: receipt(site).checkout!.expiresAt };
   const parsed = parseReceipt({ ...receipt(site), checkout }, site.siteId);
   assert.equal(parsed.checkout?.mode, 'embedded');
-  for (const patch of [{ clientSecret: 'cs_live_synthetic_secret_synthetic' }, { publishableKey: 'pk_live_' + 'p'.repeat(32) }, { url: 'https://checkout.stripe.com/c/pay/synthetic' }, { mode: 'custom' }, { expiresAt: 'not-a-date' }]) {
+  for (const patch of [{ clientSecret: 'cs_live_synthetic_secret_synthetic' }, { clientSecret: 'cs_test_synthetic_secret_invalid\nvalue' }, { publishableKey: 'pk_live_' + 'p'.repeat(32) }, { url: 'https://checkout.stripe.com/c/pay/synthetic' }, { mode: 'custom' }, { expiresAt: 'not-a-date' }]) {
     assert.throws(() => parseReceipt({ ...receipt(site), checkout: { ...checkout, ...patch } }, site.siteId));
   }
   assert.throws(() => handoffCheckout(parsed, { type: 'receipt', token: receiptToken(site) }, { history: { replaceState() { throw new Error('unexpected navigation'); } }, location: { pathname: '/', assign() { throw new Error('unexpected redirect'); } } }, 0));

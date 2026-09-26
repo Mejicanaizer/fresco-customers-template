@@ -229,8 +229,8 @@ export function parseReceipt(input: unknown, siteId: string): Receipt {
   if (v.checkout !== null) {
     const c = object(v.checkout), expiresAt = instant(c.expiresAt);
     if (c.mode === 'embedded') {
-      const clientSecret = string(c.clientSecret, 512), publishableKey = string(c.publishableKey, 255);
-      if (!/^cs_test_[A-Za-z0-9]+_secret_[A-Za-z0-9]+$/.test(clientSecret) || !/^pk_test_[A-Za-z0-9]{16,}$/.test(publishableKey) || c.url != null) throw new ContractError();
+      const clientSecret = string(c.clientSecret, 4096), publishableKey = string(c.publishableKey, 255);
+      if (!/^cs_test_[A-Za-z0-9]+_secret_[\x21-\x7e]+$/.test(clientSecret) || !/^pk_test_[A-Za-z0-9]{16,}$/.test(publishableKey) || c.url != null) throw new ContractError();
       checkout = { mode: 'embedded', clientSecret, publishableKey, expiresAt };
     } else {
       if (c.mode !== undefined && c.mode !== 'hosted') throw new ContractError();
