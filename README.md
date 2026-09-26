@@ -1,7 +1,8 @@
 # Fresco customer storefront
 
 One maintained React 19 / TypeScript / Vite application for **service bookings by
-guests**, with a dark photographic catalog, single-reservation summary and booking drawer. Deploy the same build independently for each business. Branding, service
+guests**, with a compact business header, dark service catalog, single-reservation summary,
+470px booking drawer and focused appointment pass. Deploy the same build independently for each business. Branding, service
 publication, prices, deposits, branch timezone and booking policy come from that
 business's owner backend. No product purchasing, cart or customer account exists.
 
@@ -112,6 +113,9 @@ PLAYWRIGHT_CHANNEL=chrome npm run test:browser
 npm run test:local-owner
 ```
 
+Set `STOREFRONT_TEST_PORT_OFFSET=200` to move all synthetic test ports together
+when another local task occupies the defaults.
+
 It starts two local synthetic owner servers (5491/5492) and two independently
 bound production storefront processes (5375/5376), both serving the same built
 `dist/`. Tests never navigate to Stripe or send WhatsApp messages. Synthetic
@@ -150,7 +154,7 @@ MIT © 2026 Fresco Ecosystem
 
 The owner backend may return `checkout.mode: "embedded"` with a sandbox session
 client secret, matching platform publishable key and expiry. The existing payment
-step mounts Stripe.js only after a verified receipt read. Stripe owns the secure
+step opens Stripe.js in a centered modal (full screen on phones), only after a verified receipt read. Closing and reopening reuses the same reservation and payment session. Keyboard focus stays inside the native dialog, including Stripe’s iframe, and returns to the payment button when dismissed. Stripe owns the secure
 fields; the customer gateway never receives card details. Completion refreshes
 owner status and does not claim payment or booking success on its own. Retries
 reuse the same session and command. Old hosted sessions remain available through
@@ -159,3 +163,19 @@ an explicit payment link. No automatic navigation occurs for new checkout.
 Deploy this customer contract before enabling `STRIPE_PUBLISHABLE_KEY` in either
 owner app. Use the matching sandbox platform key; never put server secrets in
 Vite variables or public configuration.
+
+### Appointment pass
+
+The receipt and guest management screen follows the device light/dark appearance;
+the catalog and booking drawers keep the dark design. Confirmed, freshly verified
+receipts can download a UTC calendar event with escaped public service/branch
+text and no private capabilities. Prepayment, processing and payment review
+states use a separate reservation summary. A verified paid booking shows the
+appointment pass, with approval requests explicitly awaiting the business and
+no calendar until confirmed. Confirmed bookings with no online payment also
+show a pass; cancelled receipts retain their clearly marked historical pass.
+Its Code 128 barcode encodes
+the exact public reference, with no private capabilities or check-in integration.
+Production references are never shortened or remapped. Professional names come from the chosen availability
+slot only; a restored private link uses a truthful fallback because the receipt
+contract does not include a public professional name.

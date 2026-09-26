@@ -81,3 +81,24 @@ The new nine-file artifact has 333770 payload bytes and manifest SHA-256
 Only `server/gateway.ts` and `server/start.ts` differ from the initial sealed
 artifact. All client assets are unchanged. This reconciliation has not been
 deployed; it does not alter the currently hosted payment policy or business data.
+
+
+## Integrated customer UI and payment modal — September 25
+
+The approved customer UI now includes the compact catalog header, immediate
+booking drawer, focused appointment pass, public reference barcode and calendar
+export. Embedded Stripe checkout opens in a native modal, centered on desktop
+and full screen on phones. Customers can close and reopen the same checkout;
+no new booking is submitted. Stripe completion triggers an owner status read;
+only verified owner facts display the confirmed appointment pass. Existing
+hosted sessions retain their explicit recovery link.
+
+Validation: 65 unit tests, TypeScript/Vite build, 55 Chrome browser tests and
+the isolated two-owner Deno runtime checks pass. Browser coverage includes
+cross-origin payment iframe keyboard navigation, dismissal/focus restoration,
+reopening, loading errors, expiry, delayed payment verification, and dark/light
+layouts at desktop, 390px and 320px widths. Existing booking, approval, refund,
+cancellation, rescheduling and tenant-isolation tests remain in the suite.
+
+The deployment artifact contains only the allowlisted runtime and built assets.
+Private configuration and QA booking details are excluded from source and uploads.

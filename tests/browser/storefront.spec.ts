@@ -1,10 +1,11 @@
+import { storefrontOrigin, ownerOrigin } from '../ports';
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { availability, makeSite, managementToken, receipt, receiptToken } from '../fixtures';
 
 test.beforeEach(async ({ request, page }) => {
-  await request.post('http://127.0.0.1:5491/__test/reset');
-  await request.post('http://127.0.0.1:5492/__test/reset');
+  await request.post(`${ownerOrigin()}/__test/reset`);
+  await request.post(`${ownerOrigin(1)}/__test/reset`);
   // No external request reaches Stripe; its hosted page is replaced with a fixture.
   await page.route(/https:\/\//, route => route.abort());
   await page.route('https://checkout.stripe.com/**', route => route.fulfill({ contentType: 'text/html', body: '<title>Synthetic Checkout</title><h1>Synthetic Checkout — no payment</h1>' }));
@@ -12,21 +13,20 @@ test.beforeEach(async ({ request, page }) => {
 async function returnFromCheckout(page: Page, site = makeSite()) {
   await page.getByRole('link', { name: 'Pagar anticipo en Stripe' }).click();
   await expect(page).toHaveURL(/^https:\/\/checkout\.stripe\.com\//);
-  const origin = site.siteId === 'grooming' ? 'http://127.0.0.1:5376' : 'http://127.0.0.1:5375';
+  const origin = site.siteId === 'grooming' ? `${storefrontOrigin(1)}` : `${storefrontOrigin()}`;
   await page.goto(`${origin}/reserva/pago#manage=${managementToken(site)}`);
 }
 async function fillSalon(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Agendar Corte de autor' }).click();
-  await page.getByRole('button', { name: 'Ver reserva', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.locator('[data-slot-id="salon-slot"]').click();
   await page.getByLabel('Nombre completo').fill('Persona de Prueba');
   await page.getByLabel('Teléfono (10 dígitos)', { exact: true }).fill('5500000000');
 }
 test('public config URL serves the matching live owner projection on both Node deployments', async ({ request }) => {
-  for (const [port, siteId] of [[5375, 'salon'], [5376, 'grooming']] as const) {
-    const origin = `http://127.0.0.1:${port}`;
+  for (const siteId of ['salon', 'grooming'] as const) {
+    const origin = storefrontOrigin(siteId === 'grooming' ? 1 : 0);
     const response = await request.get(`${origin}/store.config.json`);
     expect(response.status()).toBe(200);
     expect(response.headers()['cache-control']).toBe('no-store');
@@ -38,7 +38,7 @@ test('public config URL serves the matching live owner projection on both Node d
     expect((await request.get(`${origin}/store.config.json?siteId=foreign`)).status()).toBe(400);
     expect((await request.get(`${origin}/store.config.json`, { headers: { Origin: 'https://foreign.test' } })).status()).toBe(403);
     expect((await request.post(`${origin}/store.config.json`, { headers: { Origin: origin }, data: {} })).status()).toBe(404);
-    expect(await (await request.get(`http://127.0.0.1:${port === 5375 ? 5491 : 5492}/__test/writes`)).text()).toBe('0');
+    expect(await (await request.get(`${ownerOrigin(siteId === 'grooming' ? 1 : 0)}/__test/writes`)).text()).toBe('0');
   }
 });
 test('two production builds use runtime binding, distinct catalogs and timezone-correct slots', async ({ page }, testInfo) => {
@@ -48,15 +48,13 @@ test('two production builds use runtime binding, distinct catalogs and timezone-
   await page.screenshot({ path: testInfo.outputPath('desktop-catalog.png'), fullPage: true });
   await expect(page.getByRole('button', { name: /carrito|producto|cuenta|login/i })).toHaveCount(0);
   await page.getByRole('button', { name: 'Agendar Corte de autor' }).click();
-  await page.getByRole('button', { name: 'Ver reserva', exact: true }).click();
   await expect(page.getByRole('button', { name: /09:00.*Especialista/ })).toHaveCount(1);
   await page.getByRole('button', { name: 'Cerrar reserva' }).click();
-  await expect(page.getByRole('button', { name: 'Ver reserva', exact: true })).toBeFocused();
-  await page.goto('http://127.0.0.1:5376/');
+  await expect(page.getByRole('button', { name: 'Agendar Corte de autor', exact: true })).toBeFocused();
+  await page.goto(`${storefrontOrigin(1)}/`);
   await expect(page.getByRole('heading', { name: /Estudio Mascotas/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Agendar Corte de autor' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Agendar Baño y arreglo' }).click();
-  await page.getByRole('button', { name: 'Ver reserva', exact: true }).click();
   await expect(page.getByRole('button', { name: /12:00 a\.m\..*grooming/ })).toHaveCount(1);
   await expect(page.getByLabel('Nombre de la mascota')).toBeVisible();
 });
@@ -64,18 +62,17 @@ test('direct guest booking shows price/deposit and only creates pending payment'
   await fillSalon(page);
   await expect(page.getByRole('dialog')).toContainText('$650.00');
   await expect(page.getByRole('dialog')).toContainText('$150.00');
-  await page.getByRole('button', { name: 'Continuar al anticipo' }).dblclick();
+  await page.getByRole('button', { name: /^Pagar anticipo ·/ }).dblclick();
   await returnFromCheckout(page);
   await expect(page.getByRole('heading', { name: 'Anticipo pendiente' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Cita confirmada' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Tu cita está confirmada' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Pagar anticipo en Stripe' })).toHaveAttribute('href', /^https:\/\/checkout\.stripe\.com\//);
-  expect(await (await request.get('http://127.0.0.1:5491/__test/writes')).text()).toBe('1');
-  expect(await (await request.get('http://127.0.0.1:5492/__test/writes')).text()).toBe('0');
+  expect(await (await request.get(`${ownerOrigin()}/__test/writes`)).text()).toBe('1');
+  expect(await (await request.get(`${ownerOrigin(1)}/__test/writes`)).text()).toBe('0');
 });
 test('grooming request requires one pet and truthfully says no capacity is held', async ({ page }) => {
-  await page.goto('http://127.0.0.1:5376/');
+  await page.goto(`${storefrontOrigin(1)}/`);
   await page.getByRole('button', { name: 'Agendar Baño y arreglo' }).click();
-  await page.getByRole('button', { name: 'Ver reserva', exact: true }).click();
   await page.locator('[data-slot-id="grooming-slot"]').click();
   await page.getByLabel('Nombre completo').fill('Persona de Prueba');
   await page.getByLabel('Teléfono (10 dígitos)', { exact: true }).fill('5500000000');
@@ -84,7 +81,7 @@ test('grooming request requires one pet and truthfully says no capacity is held'
   await page.getByLabel('Raza o cruza').fill('Cruza');
   await page.getByLabel('Edad en meses').fill('24');
   await expect(page.getByRole('dialog')).toContainText('Pagas el anticipo al enviar la solicitud');
-  await page.getByRole('button', { name: 'Continuar al anticipo' }).click();
+  await page.getByRole('button', { name: /^Pagar anticipo ·/ }).click();
   await returnFromCheckout(page, makeSite('grooming'));
   await expect(page.getByRole('heading', { name: 'Anticipo pendiente' })).toBeVisible();
   const site = makeSite('grooming'), paid = { ...receipt(site, 'pending_approval'), paymentStatus: 'paid' };
@@ -93,6 +90,11 @@ test('grooming request requires one pet and truthfully says no capacity is held'
   await expect(page.getByRole('heading', { name: 'Solicitud recibida' })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'El horario no está apartado' })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'Anticipo pagado' })).toContainText('falta la aprobación');
+  await expect(page.locator('.appointment-pass')).toBeVisible();
+  await expect(page.locator('.paid-badge')).toBeVisible();
+  await expect(page.locator('.payment-summary')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Agregar al calendario' })).toHaveCount(0);
+  await expect(page.getByText('Anticipo pendiente', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Reprogramar cita' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Cancelar cita', exact: true })).toBeEnabled();
   await expect(page.getByRole('link', { name: /Pagar anticipo/ })).toHaveCount(0);
@@ -114,7 +116,7 @@ test('date change clears stale selection; empty backend availability is not synt
   await fillSalon(page);
   await page.locator('[data-date="2030-06-13"]').click();
   await expect(page.getByRole('status')).toContainText('No hay horarios disponibles');
-  await expect(page.getByRole('button', { name: 'Continuar al anticipo' })).toBeDisabled();
+  await expect(page.locator('button[type=submit]')).toBeDisabled();
 });
 test('uncertain submission locks edits and retries the exact same key and body', async ({ page }) => {
   const requests: Array<{ key: string | undefined; body: string | null }> = [];
@@ -123,7 +125,7 @@ test('uncertain submission locks edits and retries the exact same key and body',
     if (requests.length === 1) return route.fulfill({ status: 503, json: { code: 'upstream_unavailable' } });
     await route.continue();
   });
-  await fillSalon(page); await page.getByRole('button', { name: 'Continuar al anticipo' }).click();
+  await fillSalon(page); await page.getByRole('button', { name: /^Pagar anticipo ·/ }).click();
   await expect(page.getByRole('button', { name: 'Recuperar resultado', exact: true })).toBeVisible();
   await expect(page.getByLabel('Nombre completo')).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Cerrar reserva' })).toBeDisabled();
@@ -139,19 +141,19 @@ test('uncertain submission locks edits and retries the exact same key and body',
 });
 test('secure UUID fallback works; completely unsupported crypto leaves form recoverable', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(window.crypto, 'randomUUID', { value: undefined, configurable: true }));
-  await fillSalon(page); await page.getByRole('button', { name: 'Continuar al anticipo' }).click();
+  await fillSalon(page); await page.getByRole('button', { name: /^Pagar anticipo ·/ }).click();
   await returnFromCheckout(page);
   await expect(page.getByRole('heading', { name: 'Anticipo pendiente' })).toBeVisible();
   await page.addInitScript(() => Object.defineProperty(window.crypto, 'getRandomValues', { value: undefined, configurable: true }));
-  await fillSalon(page); await page.getByRole('button', { name: 'Continuar al anticipo' }).click();
+  await fillSalon(page); await page.getByRole('button', { name: /^Pagar anticipo ·/ }).click();
   await expect(page.getByRole('alert')).toContainText('solicitud segura');
-  await expect(page.getByRole('button', { name: 'Continuar al anticipo' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /^Pagar anticipo ·/ })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Cerrar reserva' })).toBeEnabled();
 });
 test('Stripe return without a capability never claims payment succeeded', async ({ page }) => {
   await page.goto('/reserva/pago?success=true&session_id=untrusted');
   await expect(page.getByText('Esta página no verifica un pago.', { exact: false })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Cita confirmada' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Tu cita está confirmada' })).toHaveCount(0);
 });
 test('management link stays out of URL/storage and cancellation uses booking terms/revision', async ({ page }) => {
   const site = makeSite(), token = managementToken(site);
@@ -165,7 +167,7 @@ test('management link stays out of URL/storage and cancellation uses booking ter
   await page.getByRole('button', { name: 'Cancelar cita', exact: true }).click();
   await expect(page.getByText(/Las condiciones aceptadas de la reserva/)).toContainText(site.booking.depositTerms);
   await page.getByRole('button', { name: 'Confirmar cancelación' }).click();
-  await expect(page.getByRole('heading', { name: 'Cita cancelada' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tu cita fue cancelada' })).toBeVisible();
   expect(command).toEqual({ token, bookingRevision: 1 });
 });
 test('mobile dialog contains keyboard focus and closes back to reservation button', async ({ page }, testInfo) => {
@@ -175,7 +177,7 @@ test('mobile dialog contains keyboard focus and closes back to reservation butto
   for (let i = 0; i < 12; i++) { await page.keyboard.press('Tab'); expect(await page.evaluate(() => !!document.activeElement?.closest('dialog'))).toBe(true); }
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).not.toBeVisible();
-  await expect(page.getByRole('button', { name: 'Ver reserva', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Agendar Corte de autor', exact: true })).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 test('receipt status is read from backend, and a cross-site capability is rejected', async ({ page }) => {
@@ -184,13 +186,13 @@ test('receipt status is read from backend, and a cross-site capability is reject
   await page.goto(`/reserva/pago#receipt=${token}`);
   await expect(page.getByRole('heading', { name: 'Pago en revisión' })).toBeVisible();
   await page.unroute('**/api/storefront/v1/booking-status');
-  await page.goto(`http://127.0.0.1:5376/reserva#manage=${managementToken(site)}`);
+  await page.goto(`${storefrontOrigin(1)}/reserva#manage=${managementToken(site)}`);
   await expect(page.getByRole('alert')).toContainText('no es válido');
 });
 test('wrong-provider create response is not accepted as checkout', async ({ page }) => {
   const site = makeSite();
   await page.route('**/api/storefront/v1/bookings', route => route.fulfill({ json: { contractVersion: 1, siteId: site.siteId, receipt: { ...receipt(site), providerId: 'different' }, receiptToken: receiptToken(site), managementToken: managementToken(site) } }));
-  await fillSalon(page); await page.getByRole('button', { name: 'Continuar al anticipo' }).click();
+  await fillSalon(page); await page.getByRole('button', { name: /^Pagar anticipo ·/ }).click();
   await expect(page.getByRole('button', { name: 'Recuperar resultado', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Pagar anticipo en Stripe' })).toHaveCount(0);
   expect(availability(site).slots[0].providerId).not.toBe('different');
@@ -224,8 +226,8 @@ test('changed settings require refreshing the published contract before another 
   let bootstraps = 0;
   await page.route('**/api/storefront/v1/bootstrap', async route => { bootstraps++; await route.continue(); });
   await page.route('**/api/storefront/v1/bookings', route => route.fulfill({ status: 409, json: { code: 'configuration_changed' } }));
-  await fillSalon(page); await page.getByRole('button', { name: 'Continuar al anticipo' }).click();
-  await expect(page.getByRole('button', { name: 'Continuar al anticipo' })).toBeDisabled();
+  await fillSalon(page); await page.getByRole('button', { name: /^Pagar anticipo ·/ }).click();
+  await expect(page.locator('button[type=submit]')).toBeDisabled();
   await page.getByRole('button', { name: 'Actualizar condiciones y reiniciar solicitud' }).click();
   await expect(page.getByRole('button', { name: 'Agendar Corte de autor' })).toBeVisible();
   expect(bootstraps).toBe(2);
@@ -254,7 +256,7 @@ test('catalog reload and reopen show edited or omitted services without stale fa
   await expect(page.getByRole('button', { name: /Todos/ })).toHaveAttribute('aria-pressed', 'true');
   const reopened = await context.newPage();
   try {
-    await reopened.goto('http://127.0.0.1:5375/');
+    await reopened.goto(`${storefrontOrigin()}/`);
     await expect(reopened.getByRole('article')).toHaveCount(1);
     await expect(reopened.getByRole('article')).toContainText('Servicio editado');
     published = { ...published, revision: 3, services: [] };
@@ -273,13 +275,12 @@ test('catalog reload and reopen show edited or omitted services without stale fa
   } finally { await reopened.close(); }
 });
 test('unpaid guest booking confirms without a checkout and the saved link supports cancellation', async ({ page, request }) => {
-  await request.post('http://127.0.0.1:5492/__test/unpaid');
-  await page.goto('http://127.0.0.1:5376/');
+  await request.post(`${ownerOrigin(1)}/__test/unpaid`);
+  await page.goto(`${storefrontOrigin(1)}/`);
   await expect(page.getByRole('contentinfo')).toContainText('Guarda el enlace privado que aparece al reservar');
   await expect(page.getByRole('contentinfo')).not.toContainText('recibas por WhatsApp');
   await expect(page.getByText('Sin pago en línea', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Agendar Baño y arreglo' }).click();
-  await page.getByRole('button', { name: 'Ver reserva', exact: true }).click();
   await page.locator('[data-slot-id="grooming-slot"]').click();
   await page.getByLabel('Nombre completo').fill('Persona de Prueba');
   await page.getByLabel('Teléfono (10 dígitos)', { exact: true }).fill('5500000000');
@@ -287,22 +288,26 @@ test('unpaid guest booking confirms without a checkout and the saved link suppor
   let submittedPet: unknown;
   await page.route('**/api/storefront/v1/bookings', async route => { submittedPet = route.request().postDataJSON().pet; await route.continue(); });
   await page.getByRole('button', { name: 'Confirmar cita sin pago en línea' }).dblclick();
-  await expect(page.getByRole('heading', { name: 'Cita confirmada' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tu cita está confirmada' })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'No se realizó ningún cobro en línea' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Stripe/ })).toHaveCount(0);
   await expect(page.getByText(/Las notificaciones automáticas por WhatsApp no están activas/)).toBeVisible();
   expect(submittedPet).toMatchObject({ name: 'Nube', sizeId: null, breed: null, ageMonths: null });
+  await expect(page.getByRole('button', { name: 'Reprogramar cita', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Cancelar cita', exact: true })).toBeEnabled();
+  await expect(page.locator('.pass-info')).toContainText('Profesional de grooming');
+  await expect(page.getByRole('article')).toHaveCount(0);
   const link = await page.getByLabel('Enlace privado de esta cita').inputValue();
   expect(new URL(link).hash.startsWith('#manage=')).toBe(true);
   expect(page.url()).not.toContain('#');
   expect(await page.evaluate(() => [localStorage.length, sessionStorage.length])).toEqual([0, 0]);
-  expect(await (await request.get('http://127.0.0.1:5492/__test/writes')).text()).toBe('1');
+  expect(await (await request.get(`${ownerOrigin(1)}/__test/writes`)).text()).toBe('1');
   await page.goto(link);
   await expect(page.getByRole('heading', { name: 'Gestionar tu cita' })).toBeVisible();
   expect(page.url()).not.toContain('#');
   await page.getByRole('button', { name: 'Cancelar cita', exact: true }).click();
   await page.getByRole('button', { name: 'Confirmar cancelación' }).click();
-  await expect(page.getByRole('heading', { name: 'Cita cancelada' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tu cita fue cancelada' })).toBeVisible();
   await expect(page.getByRole('status').filter({ hasText: 'No se realizó ningún cobro en línea' })).toBeVisible();
 });
 
@@ -319,10 +324,11 @@ test('national phone rejects invalid digits and sends a ten-digit number as Mexi
   await expect(phone).toHaveAttribute('inputmode', 'numeric');
   await expect(phone).toHaveAttribute('autocomplete', 'tel-national');
   await expect(phone).toHaveAttribute('placeholder', '5512345678');
-  const submit = page.getByRole('button', { name: 'Continuar al anticipo' });
+  const submit = page.locator('button[type=submit]');
   for (const invalid of ['551234567', '55123456789', '551234567a', '55 1234567', '55-1234567', '５５１２３４５６７８', '+525512345678']) {
     await phone.fill(invalid);
-    await submit.click();
+    await expect(submit).toBeDisabled();
+    await phone.evaluate(input => (input as HTMLInputElement).reportValidity());
     await expect(phone).toBeFocused();
     expect(await phone.evaluate(input => (input as HTMLInputElement).validity.valid)).toBe(false);
     expect(await phone.evaluate(input => (input as HTMLInputElement).validationMessage)).toContain('exactamente 10 dígitos');
@@ -341,5 +347,5 @@ test('national phone rejects invalid digits and sends a ten-digit number as Mexi
   await expect(page.getByRole('heading', { name: 'Anticipo pendiente' })).toBeVisible();
   expect(submitted).toHaveLength(1);
   expect(submitted[0].guest.whatsapp).toBe('+525512345678');
-  expect(await (await request.get('http://127.0.0.1:5491/__test/writes')).text()).toBe('1');
+  expect(await (await request.get(`${ownerOrigin()}/__test/writes`)).text()).toBe('1');
 });

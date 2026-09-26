@@ -1,0 +1,109 @@
+.receipt-column, .booking-status, .receipt-details { display: flex; flex-direction: column; gap: 22px; width: 100%; min-width: 0; }
+.receipt-column { max-width: 480px; margin-inline: auto; }
+.receipt-heading { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.receipt-heading h2 { font-size: 28px; font-weight: 700; letter-spacing: -.025em; }
+.receipt-heading > p { max-width: 420px; font-size: 14.5px; line-height: 1.5; color: var(--fs-muted); text-wrap: pretty; }
+.receipt-chip { min-height: 28px; display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; border-radius: 999px; border: 1px solid #f5c26b40; background: #f5c26b1a; color: #f5c26b; font-size: 13px; font-weight: 600; }
+.receipt-chip i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.receipt-chip.confirmed { color: #86efac; background: #4ade801a; border-color: #4ade8040; }
+.receipt-chip.inactive { color: #c4c4ca; background: #ffffff0d; border-color: #ffffff1a; }
+.appointment-pass { position: relative; filter: drop-shadow(0 18px 40px #0008); }
+.pass-main { background: var(--fs-surface); border-radius: 18px 18px 0 0; padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 22px; mask: radial-gradient(circle 12px at 0 100%, transparent 12px, #000 12.5px) left / 51% 100% no-repeat, radial-gradient(circle 12px at 100% 100%, transparent 12px, #000 12.5px) right / 51% 100% no-repeat; }
+.pass-brand { display: flex; align-items: center; gap: 12px; }
+.pass-logo { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 10px; background: #26272b; border: 1px solid #ffffff1f; color: var(--fs-text); object-fit: cover; font-size: 15px; font-weight: 700; }
+.pass-brand > div:not(.pass-logo) { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.pass-brand strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.pass-brand > div > span { font-size: 12px; color: var(--fs-subtle); }
+.pass-label, .pass-info dt { font-size: 10.5px; font-weight: 600; letter-spacing: .12em; color: var(--fs-subtle); text-transform: uppercase; }
+.pass-brand > .pass-label { letter-spacing: .14em; text-align: right; }
+.pass-date-time { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding-top: 20px; border-top: 1px solid var(--fs-border); }
+.pass-date-time > div { display: flex; flex-direction: column; gap: 4px; }
+.pass-date-time strong { font-size: 32px; line-height: 1.05; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.pass-date-time strong small { font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--fs-muted); white-space: nowrap; }
+.pass-date-time div > span:last-child { font-size: 13px; color: var(--fs-muted); }
+.pass-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; }
+.pass-info > div { display: grid; align-content: start; gap: 5px; min-width: 0; }
+.pass-info dd { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.pass-service, .pass-provider { grid-column: 1 / -1; }
+.pass-service dd { font-size: 15px; }
+.paid-badge { display: inline-flex; align-items: center; gap: 3px; color: #86efac; background: #4ade801a; border: 1px solid #4ade8040; border-radius: 5px; font-size: 10.5px; padding: 1px 5px; margin-left: 6px; }
+.paid-badge svg { width: 11px; height: 11px; }
+.pass-bottom { background: var(--fs-surface); border-radius: 0 0 18px 18px; padding: 20px 24px 22px; border-top: 2px dashed var(--fs-border-hover); display: flex; flex-direction: column; align-items: center; gap: 10px; mask: radial-gradient(circle 12px at 0 0, transparent 12px, #000 12.5px) left / 51% 100% no-repeat, radial-gradient(circle 12px at 100% 0, transparent 12px, #000 12.5px) right / 51% 100% no-repeat; }
+/* Code 128 of the public reference. No scanning/check-in workflow is exposed. */
+.receipt-reference { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; min-width: 0; }
+.pass-bars { display: block; max-width: 300px; width: 100%; height: 52px; border-radius: 3px; }
+.pass-reference { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; max-width: 100%; }
+.pass-reference > span { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 500; letter-spacing: .06em; overflow-wrap: anywhere; min-width: 0; line-height: 1.5; }
+.pass-reference button { padding: 0 10px; height: 28px; font-size: 11.5px; border-radius: 7px; color: var(--fs-muted); background: transparent; border: 1px solid var(--fs-border-hover); }
+.payment-summary { background: var(--fs-surface); border: 1px solid var(--fs-border); border-radius: 16px; padding: 22px; display: grid; gap: 20px; }
+.payment-summary-title { display: grid; gap: 6px; }
+.payment-summary-title > span, .payment-summary-reference > span { color: var(--fs-subtle); font-size: 12px; }
+.payment-summary-title > strong { font-size: 18px; }
+.payment-summary-title p { font-size: 13px; color: var(--fs-muted); }
+.payment-summary dl { display: grid; gap: 16px; margin: 0; }
+.payment-summary dl > div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.payment-summary dt { color: var(--fs-muted); }
+.payment-summary dd { margin: 0; text-align: right; font-weight: 600; }
+.payment-summary dd small { display: block; color: var(--fs-subtle); font-size: 11px; font-weight: 400; margin-top: 4px; }
+.payment-summary-reference { display: grid; gap: 8px; border-top: 1px solid var(--fs-border); padding-top: 16px; }
+.payment-summary-reference .pass-reference { width: 100%; justify-content: space-between; }
+.pass-bottom > p { color: var(--fs-subtle); font-size: 12px; text-align: center; }
+.is-cancelled .pass-bars { opacity: .35; }
+.cancelled-stamp { pointer-events: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-12deg); border: 3px solid #f19a8e; border-radius: 10px; color: #f19a8e; padding: 10px 16px; font-size: 26px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.calendar-export { width: 100%; height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; font-size: 14.5px; font-weight: 600; }
+.receipt-payment-state { font-size: 13px; line-height: 1.5; color: var(--fs-muted); text-align: center; }
+.management-link { padding: 18px 20px; border: 1px solid #0e7bc44d; border-radius: 14px; background: #0e7bc414; display: grid; gap: 12px; overflow-wrap: anywhere; }
+.management-link h2 { font-size: 15px; font-weight: 600; color: var(--fs-text); display: flex; gap: 8px; align-items: center; }
+.management-link p { font-size: 13.5px; line-height: 1.5; color: var(--fs-muted); }
+.management-link-field { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.management-link-field input { flex: 1 1 200px; width: 100%; min-width: 0; height: 42px; padding: 0 12px; border: 1px solid #ffffff14; border-radius: 10px; background: #0f1012; color: var(--fs-text); font-size: 13px; }
+.management-link-field button { height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: #fafafa; color: #0b0b0c; font-size: 13px; font-weight: 600; }
+.management-link > .text-button { justify-self: start; }
+.management-actions { padding: 18px 20px; border-radius: 14px; border: 1px solid var(--fs-border); background: #161719; display: grid; gap: 14px; }
+.management-actions h2 { font-size: 15px; font-weight: 600; }
+.management-actions p { font-size: 13.5px; line-height: 1.5; color: var(--fs-muted); }
+.management-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.management-buttons button { min-height: 42px; font-size: 13px; padding: 8px; }
+.cancel-button { color: #f19a8e; background: transparent; border-color: #f19a8e40; }
+.cancel-confirmation { background: #f19a8e0a; border: 1px solid #f19a8e40; padding: 14px 16px; border-radius: 12px; display: grid; gap: 12px; }
+.cancel-confirmation h3 { font-size: 14px; }
+.receipt-terms { color: var(--fs-muted); font-size: 13px; line-height: 1.5; }
+.receipt-terms p { margin-top: 10px; white-space: pre-line; }
+.receipt-refresh { align-self: center; color: var(--fs-subtle); font-size: 12.5px; }
+.browse-services { align-self: center; color: var(--fs-muted); font-size: 13px; }
+@media (prefers-color-scheme: light) {
+  .app-tienda-page.receipt-page { color-scheme: light; background: #f2f2f4; color: #0b0b0c; --fs-bg: #f2f2f4; --fs-text: #0b0b0c; --fs-muted: #52525b; --fs-subtle: #6b6b73; --fs-surface: #fff; --fs-field: #f7f8fa; --fs-border: #00000012; --fs-border-hover: #00000024; }
+  .receipt-page .storefront-description { color: #52525b; }
+  .receipt-page .store-logo.public-image-fallback, .receipt-page .store-logo, .receipt-page .pass-logo { background: linear-gradient(160deg, #fff, #f1f1f3); border-color: #0000001a; color: #0b0b0c; }
+  .receipt-page .appointment-pass { filter: drop-shadow(0 14px 32px #0000001a); }
+  .receipt-page .receipt-chip.confirmed, .receipt-page .paid-badge { color: #15803d; }
+  .receipt-page .receipt-chip.pending { color: #a16207; }
+  .receipt-page .receipt-chip.inactive { color: #52525b; background: #00000005; border-color: #0000001a; }
+  .receipt-page .management-link { background: #0e7bc40f; border-color: #0e7bc440; }
+  .receipt-page .management-link h2 svg { color: #0b6aa8; }
+  .receipt-page .management-link-field input { background: #f7f8fa; border-color: #00000014; }
+  .receipt-page .management-link-field button, .receipt-page .payment-link { background: #0b0b0c; color: #fff; }
+  .receipt-page .management-actions { background: #fff; }
+  .receipt-page .cancel-button, .receipt-page .cancelled-stamp { color: #b42318; border-color: #b4231840; }
+  .receipt-page > main .form-error { color: #b42318; }
+  .receipt-page .booking-dialog .form-error { color: #fca5a5; }
+}
+@media (max-width: 360px) {
+  .pass-main { padding: 20px 18px; }
+  .pass-bottom { padding-inline: 18px; }
+  .pass-date-time strong { font-size: 27px; }
+  .pass-brand { gap: 8px; }
+  .pass-brand > .pass-label { max-width: 55px; font-size: 9px; }
+  .management-link, .management-actions { padding: 16px; }
+  .cancel-confirmation { padding: 12px; }
+}
+
+.management-link h2 svg { color: #7cc8f2; }
+.management-link-field button { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+.management-link-field button svg { width: 14px; height: 14px; }
+
+.paid-badge > span:last-child { text-transform: capitalize; }
+
+.receipt-bottom-row { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+.management-link-field button, .pass-reference button { flex-shrink: 0; white-space: nowrap; }

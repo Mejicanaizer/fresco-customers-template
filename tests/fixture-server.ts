@@ -1,10 +1,12 @@
 /** Local test process only; not imported by production, not an owner implementation. */
 import { createServer } from 'node:http';
+import { testPortOffset } from './ports.ts';
 import { Readable } from 'node:stream';
 import { fixtureOwner, makeSite, makeUnpaidSite } from './fixtures.ts';
 
 if (process.env.STOREFRONT_TEST_FIXTURES !== '1') throw new Error('Synthetic fixtures require STOREFRONT_TEST_FIXTURES=1.');
-for (const [kind, port] of [['salon', 5491], ['grooming', 5492]] as const) {
+for (const [kind, basePort] of [['salon', 5491], ['grooming', 5492]] as const) {
+  const port = basePort + testPortOffset;
   let owner = fixtureOwner(makeSite(kind));
   createServer(async (req, res) => {
     if (req.url === '/health') { res.end('Synthetic owner fixture'); return; }

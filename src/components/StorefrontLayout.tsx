@@ -18,23 +18,17 @@ export function PublicImage({ url, className, fallback, eager = false }: { url?:
     ? <img src={url} alt="" className={className} loading={eager ? 'eager' : 'lazy'} onError={() => setFailedUrl(url)} />
     : <div className={`${className} public-image-fallback`} aria-hidden="true">{fallback}</div>;
 }
-export function StorefrontLayout({ site, children, illustrativeMedia = false }: { site: Storefront; children: ReactNode; illustrativeMedia?: boolean }) {
+export function StorefrontLayout({ site, children, illustrativeMedia = false, receiptView = false }: { site: Storefront; children: ReactNode; illustrativeMedia?: boolean; receiptView?: boolean }) {
   const style = { '--fs-brand': site.theme.accent, '--fs-brand-text': site.theme.accentText } as CSSProperties;
-  return <div className="app-tienda-page" style={style}>
+  return <div className={`app-tienda-page ${receiptView ? 'receipt-page' : ''}`} style={style}>
     <a className="skip-link" href="#contenido">Ir al contenido</a>
     <header className="storefront-hero">
-      <PublicImage url={site.coverImageUrl} className="storefront-cover" eager />
-      <div className="storefront-hero-shade" />
       <div className="storefront-identity storefront-container">
         <PublicImage url={site.logoUrl} className="store-logo" eager fallback={<span>{site.name.trim().slice(0, 1)}</span>} />
         <div className="storefront-identity-copy">
           <h1>{site.name}</h1>
           <p className="storefront-description">{site.description}</p>
-          <div className="storefront-contact">
-            {site.contact.address && <span><Icon name="pin" />{site.contact.address}</span>}
-            {site.contact.phone && <a href={`tel:${site.contact.phone}`}><Icon name="phone" />{site.contact.phone}</a>}
-            {site.contact.whatsapp && <a href={`https://wa.me/${site.contact.whatsapp}`} target="_blank" rel="noopener noreferrer">Contactar por WhatsApp<Icon name="chevron" /></a>}
-          </div>
+
         </div>
       </div>
     </header>
@@ -45,6 +39,11 @@ export function StorefrontLayout({ site, children, illustrativeMedia = false }: 
       <p>{site.booking.notifications === 'none'
         ? 'Guarda el enlace privado que aparece al reservar para gestionar tu cita.'
         : 'Tu enlace privado aparece al reservar. Consulta ahí el estado de tu notificación por WhatsApp.'}</p>
+                <div className="storefront-contact">
+            {site.contact.address && <span><Icon name="pin" />{site.contact.address}</span>}
+            {site.contact.phone && <a href={`tel:${site.contact.phone}`}><Icon name="phone" />{site.contact.phone}</a>}
+            {site.contact.whatsapp && <a href={`https://wa.me/${site.contact.whatsapp}`} target="_blank" rel="noopener noreferrer">Contactar por WhatsApp<Icon name="chevron" /></a>}
+          </div>
       <span className="storefront-credit">Hecho con Fresco</span>
     </footer>
   </div>;
@@ -66,11 +65,10 @@ export function ServiceCard({ service, site, selected = false, onBook }: { servi
     </div>
   </article>;
 }
-export function ReservationSummary({ site, service, onOpen, onRemove }: { site: Storefront; service: PublicService; onOpen: () => void; onRemove: () => void }) {
-  return <aside className="reservation-summary" aria-label="Resumen de tu reserva">
-    <span className="reservation-count" aria-label="Un servicio seleccionado">1</span>
-    <div className="reservation-summary-price"><span className="reservation-summary-name">{service.name}</span><strong>{formatMoney(service.priceMinor, site)}</strong></div>
-    <button type="button" className="reservation-open" onClick={onOpen}>Ver reserva<Icon name="chevron" /></button>
+export function ReservationSummary({ site, service, onOpen, onRemove, hidden = false }: { site: Storefront; service: PublicService; onOpen: () => void; onRemove: () => void; hidden?: boolean }) {
+  return <aside hidden={hidden} className="reservation-summary" aria-label="Resumen de tu reserva">
+    <div className="reservation-summary-price"><span className="reservation-summary-name">{service.name}</span><strong>{formatMoney(service.priceMinor, site)} · {service.durationMinutes} min</strong></div>
+    <button type="button" className="reservation-open" onClick={onOpen}>Elegir horario<Icon name="chevron" /></button>
     <button type="button" className="icon-button reservation-remove" aria-label="Quitar servicio seleccionado" onClick={onRemove}><Icon name="close" /></button>
   </aside>;
 }

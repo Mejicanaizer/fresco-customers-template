@@ -27,7 +27,6 @@ test('real customer date change loads authoritative slots without creating a boo
   await page.route(/https:\/\//, route => route.abort());
   await page.goto('/');
   await page.getByRole('button', { name: `Agendar ${service.name}`, exact: true }).click();
-  await page.getByRole('button', { name: 'Ver reserva', exact: true }).click();
   const dateButton = page.locator(`[data-date="${date}"]`);
   for (let i = 0; i < 24 && !await dateButton.count(); i++) await page.getByRole('button', { name: 'Mes siguiente', exact: true }).click();
   await expect(dateButton).toBeEnabled();
@@ -47,7 +46,7 @@ test('real customer date change loads authoritative slots without creating a boo
   const chosen = slots.locator(`[data-slot-id="${expected.slots[0].id}"]`);
   await chosen.click();
   await expect(chosen).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('button', { name: 'Confirmar cita sin pago en línea', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Completa tus datos', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Cerrar reserva' }).click();
   await expect(page.getByRole('contentinfo')).toContainText('Guarda el enlace privado que aparece al reservar');
   expect(writes).toBe(0);

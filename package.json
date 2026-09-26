@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^9.17.0",
+    "jsbarcode": "3.12.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
